@@ -9,3 +9,4 @@ pub mod person_properties;
 pub mod random;
 pub mod regions;
 pub mod reports;
+mod test_plugin;
