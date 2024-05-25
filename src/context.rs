@@ -43,6 +43,7 @@ pub struct TimedPlan {
     plan_id: u64,
     #[derivative(PartialEq = "ignore", Debug = "ignore")]
     pub callback: Box<dyn FnOnce(&mut Context)>,
+    component: Option<TypeId>,
 }
 
 impl Ord for TimedPlan {
@@ -86,6 +87,7 @@ impl PlanQueue {
             time,
             plan_id,
             callback: Box::new(callback),
+            component: None,
         });
         self.plan_counter += 1;
         PlanId { id: plan_id }
@@ -120,6 +122,7 @@ pub struct Context {
     callback_queue: VecDeque<Box<Callback>>,
     plugin_data: HashMap<TypeId, Box<dyn Any>>,
     time: f64,
+    components:  HashMap<TypeId, Box<dyn Any>>,
 }
 
 impl Context {
@@ -128,6 +131,7 @@ impl Context {
             plan_queue: PlanQueue::new(),
             callback_queue: VecDeque::new(),
             plugin_data: HashMap::new(),
+            components: HashMap::new(),
             time: 0.0,
         }
     }
@@ -190,9 +194,27 @@ impl Context {
         T::init(self);
     }
 
-    pub fn add_instance<T: Component>(&mut self, _component: T) {
+    pub fn add_instance<T: Component>(&mut self, component: T) {
+        self.components
+            .insert(TypeId::of::<T>(), Box::new(component));
     }
-    
+
+    pub fn get_instance<T: Component>(&self) -> Option<&T> {
+        let type_id = &TypeId::of::<T>();
+        if !self.components.contains_key(type_id) {
+            return None;
+        }
+        let component = self
+            .components
+            .get(type_id)
+            .unwrap()
+            .downcast_ref::<T>();
+        match component {
+            Some(x) => Some(x),
+            None => panic!("Component of incorrect type"),
+        }
+    }
+
     pub fn execute(&mut self) {
         // Execute callbacks if there are any in the queue
         loop {

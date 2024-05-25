@@ -4,6 +4,7 @@ use crate::global_properties::GlobalPropertyContext;
 
 crate::define_global_property!(TestProperty, usize);
 
+#[derive(Debug)]
 struct TestPlugin {
     f: usize,
 }
@@ -13,6 +14,8 @@ impl TestPlugin {
         self.f = *context.get_global_property_value::<TestProperty>().unwrap();
     }
 
+    fn callback(context: &mut Context) {
+    }
 }
 
 impl crate::context::Plugin for TestPlugin {
@@ -43,6 +46,11 @@ mod tests {
         let mut tp = TestPlugin{f: 0};
         tp.init2(&mut context);
         context.add_instance(tp);
+        let tp2 = context.get_instance::<TestPlugin>().unwrap();
+        println!("TP2 {:?}", tp2);
+        assert_eq!(tp2.f, u);
+        let _ = context.add_plan(1.0, TestPlugin::callback);
+        context.execute();
     }
 }
     
