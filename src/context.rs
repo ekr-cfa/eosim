@@ -190,6 +190,9 @@ impl Context {
         T::init(self);
     }
 
+    pub fn add_instance<T: Component>(&mut self, _component: T) {
+    }
+    
     pub fn execute(&mut self) {
         // Execute callbacks if there are any in the queue
         loop {
